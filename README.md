@@ -13,7 +13,7 @@ uv run --project backend uvicorn backend.main:app --reload --host 127.0.0.1 --po
 ## Environment variables
 
 - `PORTFOLIO_BACKEND_API_URL`
-  Example: `http://127.0.0.1:8000`
+  Example: `https://backend-f5c9d745.fastapicloud.dev`
 - `PORTFOLIO_BACKEND_DB_PATH`
   Optional custom SQLite path. Defaults to `tmp/portfolio.sqlite`
 - `PORTFOLIO_ADMIN_EMAIL`

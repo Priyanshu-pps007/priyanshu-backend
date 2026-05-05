@@ -24,6 +24,11 @@ from schemas import (
     SessionTokenRequest,
 )
 
+from fastapi.middleware import CORSMiddleware
+
+
+
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -39,6 +44,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+origins = [
+    "http://localhost:3000",
+    "http://priyanshupps.vercel.app",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health", response_model=MessageResponse)
 async def healthcheck() -> MessageResponse:
