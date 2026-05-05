@@ -5,7 +5,13 @@ from datetime import datetime, timedelta, timezone
 from config import ADMIN_EMAIL, ADMIN_PASSWORD
 from database import get_connection
 from schemas import ContactSubmissionCreate
-from security import generate_salt, generate_session_token, hash_password, verify_password
+from security import (
+    create_signed_session_token,
+    generate_salt,
+    hash_password,
+    verify_password,
+    verify_signed_session_token,
+)
 
 
 SESSION_DURATION = timedelta(days=7)
@@ -33,10 +39,7 @@ def ensure_admin_user() -> None:
 
 
 def delete_expired_sessions() -> None:
-    with get_connection() as connection:
-        connection.execute(
-            "DELETE FROM admin_sessions WHERE datetime(expires_at) <= datetime('now')"
-        )
+    return None
 
 
 def authenticate_admin(email: str, password: str) -> tuple[dict[str, str | int], str, str] | None:
@@ -52,49 +55,24 @@ def authenticate_admin(email: str, password: str) -> tuple[dict[str, str | int],
     if not verify_password(password, row["password_salt"], row["password_hash"]):
         return None
 
-    session_token = generate_session_token()
     expires_at = (datetime.now(timezone.utc) + SESSION_DURATION).isoformat().replace(
         "+00:00", "Z"
     )
-
-    with get_connection() as connection:
-        connection.execute(
-            "INSERT INTO admin_sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)",
-            (row["id"], session_token, expires_at),
-        )
-
     admin = {"id": row["id"], "email": row["email"]}
+    session_token = create_signed_session_token(
+        user_id=row["id"],
+        email=row["email"],
+        expires_at=expires_at,
+    )
     return admin, session_token, expires_at
 
 
 def get_admin_by_session(session_token: str) -> dict[str, str | int] | None:
-    delete_expired_sessions()
-
-    with get_connection() as connection:
-        row = connection.execute(
-            """
-            SELECT admin_sessions.session_token, admin_sessions.expires_at, admin_users.id, admin_users.email
-            FROM admin_sessions
-            INNER JOIN admin_users ON admin_users.id = admin_sessions.user_id
-            WHERE admin_sessions.session_token = ?
-            """,
-            (session_token,),
-        ).fetchone()
-
-    if not row:
-        return None
-
-    expires_at = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
-    if expires_at <= datetime.now(timezone.utc):
-        invalidate_session(session_token)
-        return None
-
-    return {"id": row["id"], "email": row["email"]}
+    return verify_signed_session_token(session_token)
 
 
 def invalidate_session(session_token: str) -> None:
-    with get_connection() as connection:
-        connection.execute("DELETE FROM admin_sessions WHERE session_token = ?", (session_token,))
+    return None
 
 
 def save_contact_submission(payload: ContactSubmissionCreate) -> None:

@@ -15,4 +15,8 @@ DATABASE_PATH = Path(
 
 ADMIN_EMAIL = os.environ.get("PORTFOLIO_ADMIN_EMAIL", "").strip().lower()
 ADMIN_PASSWORD = os.environ.get("PORTFOLIO_ADMIN_PASSWORD", "").strip()
-
+SESSION_SECRET = (
+    os.environ.get("PORTFOLIO_SESSION_SECRET", "").strip()
+    or ADMIN_PASSWORD
+    or "portfolio-dev-session-secret"
+)
