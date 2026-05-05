@@ -24,7 +24,7 @@ from schemas import (
     SessionTokenRequest,
 )
 
-from fastapi.middleware import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
